@@ -62,19 +62,23 @@ namespace XAssetDumper {
 	}
 
 	void DumpLocalize() {
-		char buf[256];
 		DB_AssetPool* pool = GetXAssetPool(ASSET_TYPE_LOCALIZE);
 		auto assets = (LocalizeEntry*)(pool->m_entries);
 		std::filesystem::create_directories(path + "Localize");
 		std::ofstream file;
-		file.open(path + "Localize\\localize.csv");
+		file.open(path + "Localize\\localize.json");
+		file << "{\n";
 		for (int i = 0; i < pool->m_loadedPoolSize; ++i) {
 			auto header = &assets[i];
 			if (!header->hash || !header->value) continue;
-			sprintf_s(buf, "0x%llX", header->hash);
-			file << buf << ',' << cleanstr(DB_GetString(header->value)) << "\n";
-			//printf("exported localize entry - %llX\n", header->hash);
+
+			file << "    \"" << std::hex << std::uppercase << header->hash << "\": \"" << cleanstr(DB_GetString(header->value)) << "\"";
+
+			if (i + 1 != pool->m_loadedPoolSize) {
+				file << ",\n";
+			}
 		}
+		file << "\n}";
 		file.close();
 	}
 
