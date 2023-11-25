@@ -28,7 +28,55 @@ namespace XAssetDumper {
 		return func(filename, buf, size);
 	}
 
+	// not in the pdb, guessing name
+	char* DB_GetString(char* value) {
+		auto func = reinterpret_cast<char* (*)(char*)>(0x21D49E0_g); // E8 ? ? ? ? 48 89 06 33 C0
+		return func(value);
+	}
+
 	// Assets
+
+	// thanks stackoverflow
+	std::string cleanstr(const std::string& s) {
+		std::ostringstream o;
+		for (auto c = s.cbegin(); c != s.cend(); c++) {
+			switch (*c) {
+			case '"': o << "\\\""; break;
+			case '\\': o << "\\\\"; break;
+			case '\b': o << "\\b"; break;
+			case '\f': o << "\\f"; break;
+			case '\n': o << "\\n"; break;
+			case '\r': o << "\\r"; break;
+			case '\t': o << "\\t"; break;
+			default:
+				if ('\x00' <= *c && *c <= '\x1f') {
+					o << "\\u"
+						<< std::hex << std::setw(4) << std::setfill('0') << static_cast<int>(*c);
+				}
+				else {
+					o << *c;
+				}
+			}
+		}
+		return o.str();
+	}
+
+	void DumpLocalize() {
+		char buf[256];
+		DB_AssetPool* pool = GetXAssetPool(ASSET_TYPE_LOCALIZE);
+		auto assets = (LocalizeEntry*)(pool->m_entries);
+		std::filesystem::create_directories(path + "Localize");
+		std::ofstream file;
+		file.open(path + "Localize\\localize.csv");
+		for (int i = 0; i < pool->m_loadedPoolSize; ++i) {
+			auto header = &assets[i];
+			if (!header->hash || !header->value) continue;
+			sprintf_s(buf, "0x%llX", header->hash);
+			file << buf << ',' << cleanstr(DB_GetString(header->value)) << "\n";
+			//printf("exported localize entry - %llX\n", header->hash);
+		}
+		file.close();
+	}
 
 	void DumpStringTable() {
 		char buf[256];

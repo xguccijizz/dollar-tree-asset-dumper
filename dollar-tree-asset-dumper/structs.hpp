@@ -2,6 +2,7 @@
 #include "headers.hpp"
 
 enum XAssetType {
+	ASSET_TYPE_LOCALIZE = 0x3B,
 	ASSET_TYPE_RAWFILE = 0x44,
 	ASSET_TYPE_STRINGTABLE = 0x47,
 	ASSET_TYPE_LUA_FILE = 0x4C,
@@ -38,4 +39,10 @@ struct LuaFile
 	uintptr_t hash;
 	int len;
 	const char* buffer;
+};
+
+struct LocalizeEntry
+{
+	uintptr_t hash;
+	char* value;
 };

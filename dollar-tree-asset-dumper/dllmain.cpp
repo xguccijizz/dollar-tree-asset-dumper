@@ -4,6 +4,7 @@ uintptr_t base = 0;
 
 void main() {
     base = (uintptr_t)(GetModuleHandle(0));
+    XAssetDumper::DumpLocalize();
     XAssetDumper::DumpStringTable();
     XAssetDumper::DumpRawFile();
     //XAssetDumper::DumpLuaFile();
