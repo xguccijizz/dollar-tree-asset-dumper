@@ -14,23 +14,25 @@ namespace XAssetDumper {
 	// Functions
 
 	DB_AssetPool* GetXAssetPool(XAssetType type) {
-		auto pool = (DB_AssetPool*)(0xC0A3E50_g); // E8 ? ? ? ? 4C 89 7C 24 ? 44 8B CE
-		return &pool[type];
+		//auto pool = (DB_AssetPool*)(0xC0A3E50_g); // E8 ? ? ? ? 4C 89 7C 24 ? 44 8B CE
+		//return &pool[type];
+		auto func = reinterpret_cast<DB_AssetPool*(*)(XAssetType)>(Offsets::GetXAssetPool);
+		return func(type);
 	}
 
 	char* StringTable_GetColumnValueForRow(StringTable* table, int row, int column) {
-		auto func = reinterpret_cast<char* (*)(StringTable*, int, int)>(0x41748D0_g); // E8 ?? ?? ?? ?? 80 38 00 74 0D
+		auto func = reinterpret_cast<char* (*)(StringTable*, int, int)>(Offsets::StringTable_GetColumnValueForRow); // E8 ?? ?? ?? ?? 80 38 00 74 0D
 		return func(table, row, column);
 	}
 
 	char* DB_ReadRawFile(const char* filename, char* buf, int size) {
-		auto func = reinterpret_cast<char* (*)(const char*, char*, int)>(0x37AD8B0_g); // E8 ? ? ? ? 48 85 C0 75 34 45 84 F6
+		auto func = reinterpret_cast<char* (*)(const char*, char*, int)>(Offsets::DB_ReadRawFile); // E8 ? ? ? ? 48 85 C0 75 34 45 84 F6
 		return func(filename, buf, size);
 	}
 
 	// not in the pdb, guessing name
 	char* DB_GetString(char* value) {
-		auto func = reinterpret_cast<char* (*)(char*)>(0x21D49E0_g); // E8 ? ? ? ? 48 89 06 33 C0
+		auto func = reinterpret_cast<char* (*)(char*)>(Offsets::DB_GetString); // E8 ? ? ? ? 48 89 06 33 C0
 		return func(value);
 	}
 
@@ -78,6 +80,7 @@ namespace XAssetDumper {
 				file << ",\n";
 			}
 		}
+		//printf("Dumped localize\n");
 		file << "\n}";
 		file.close();
 	}

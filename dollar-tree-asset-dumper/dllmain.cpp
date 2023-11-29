@@ -2,12 +2,21 @@
 
 uintptr_t base = 0;
 
-void main() {
-    base = (uintptr_t)(GetModuleHandle(0));
-    XAssetDumper::DumpLocalize();
-    XAssetDumper::DumpStringTable();
-    XAssetDumper::DumpRawFile();
+int main() {
+    AllocConsole();
+    FILE* Dummy;
+    freopen_s(&Dummy, "CONOUT$", "w", stdout);
+    freopen_s(&Dummy, "CONIN$", "r", stdin);
+    Offsets::Scan();
+    if (!Offsets::GetXAssetPool) {
+        printf("Asset Pool Offset not found, can't proceed\n");
+        return 1;
+    }
+    if (Offsets::DB_GetString) XAssetDumper::DumpLocalize();
+    if (Offsets::StringTable_GetColumnValueForRow) XAssetDumper::DumpStringTable();
+    if (Offsets::DB_ReadRawFile) XAssetDumper::DumpRawFile();
     //XAssetDumper::DumpLuaFile();
+    return 0;
 }
 
 BOOL APIENTRY DllMain( HMODULE hModule,
