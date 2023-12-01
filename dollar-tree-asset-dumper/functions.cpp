@@ -13,9 +13,24 @@ namespace XAssetDumper {
 
 	// Functions
 
+	const uint64_t HashAsset(const char* data)
+	{
+		uint64_t result = 0x47F5817A5EF961BA;
+
+		for (size_t i = 0; i < strlen(data); i++)
+		{
+			uint64_t value = tolower(data[i]);
+
+			if (value == '\\')
+				value = '/';
+
+			result = 0x100000001B3 * (value ^ result);
+		}
+
+		return result & 0x7FFFFFFFFFFFFFFF;
+	}
+	
 	DB_AssetPool* GetXAssetPool(XAssetType type) {
-		//auto pool = (DB_AssetPool*)(0xC0A3E50_g); // E8 ? ? ? ? 4C 89 7C 24 ? 44 8B CE
-		//return &pool[type];
 		auto func = reinterpret_cast<DB_AssetPool*(*)(XAssetType)>(Offsets::GetXAssetPool);
 		return func(type);
 	}
@@ -35,8 +50,6 @@ namespace XAssetDumper {
 		auto func = reinterpret_cast<char* (*)(char*)>(Offsets::DB_GetString); // E8 ? ? ? ? 48 89 06 33 C0
 		return func(value);
 	}
-
-	// Assets
 
 	// thanks stackoverflow
 	std::string cleanstr(const std::string& s) {
@@ -63,27 +76,15 @@ namespace XAssetDumper {
 		return o.str();
 	}
 
-	void DumpLocalize() {
-		DB_AssetPool* pool = GetXAssetPool(ASSET_TYPE_LOCALIZE);
-		auto assets = (LocalizeEntry*)(pool->m_entries);
-		std::filesystem::create_directories(path + "Localize");
-		std::ofstream file;
-		file.open(path + "Localize\\localize.json");
-		file << "{\n";
-		for (int i = 0; i < pool->m_loadedPoolSize; ++i) {
-			auto header = &assets[i];
-			if (!header->hash || !header->value) continue;
+	std::unordered_map<__int64, std::string> localizeHashes;
 
-			file << "    \"" << std::hex << std::uppercase << header->hash << "\": \"" << cleanstr(DB_GetString(header->value)) << "\"";
-
-			if (i + 1 != pool->m_loadedPoolSize) {
-				file << ",\n";
-			}
+	void IsLocalizedString(std::string str) {
+		if (str.length() && strstr(str.c_str(), "/") && !strstr(str.c_str(), ".")) {
+			localizeHashes.insert({ HashAsset(str.c_str()), str });
 		}
-		//printf("Dumped localize\n");
-		file << "\n}";
-		file.close();
 	}
+
+	// Assets
 
 	void DumpStringTable() {
 		char buf[256];
@@ -103,6 +104,8 @@ namespace XAssetDumper {
 				for (int y = 0; y < header->columnCount; ++y)
 				{
 					char* cell = StringTable_GetColumnValueForRow(header, x, y);
+					std::string e = cell;
+					IsLocalizedString(e); // grabbing unhashed localize names
 					file << cell;
 					if (y != (header->columnCount - 1))
 					{
@@ -113,8 +116,41 @@ namespace XAssetDumper {
 				file << std::endl;
 			}
 			file.close();
-			//printf("exported csv - %llX.csv\n", header->hash);
+			
 		}
+		printf("Dumped StringTables\n");
+	}
+
+	void DumpLocalize() {
+		char buf[512];
+		DB_AssetPool* pool = GetXAssetPool(ASSET_TYPE_LOCALIZE);
+		auto assets = (LocalizeEntry*)(pool->m_entries);
+		std::filesystem::create_directories(path + "Localize");
+		std::ofstream file;
+		file.open(path + "Localize\\localize.json");
+		file << "{\n";
+		for (int i = 0; i < pool->m_loadedPoolSize; ++i) {
+			auto header = &assets[i];
+			if (!header->hash || !header->value) continue;
+
+			auto keyExists = localizeHashes.find(header->hash);
+			if (keyExists == localizeHashes.end()) {
+				sprintf_s(buf, "%llX", header->hash);
+			}
+			else {
+				sprintf_s(buf, "%s", keyExists->second.c_str());
+			}
+
+			file << "    \"" << buf << "\": \"" << cleanstr(DB_GetString(header->value)) << "\"";
+
+			if (i + 1 != pool->m_loadedPoolSize) {
+				file << ",\n";
+			}
+		}
+		file << "\n}";
+		file.close();
+		localizeHashes.clear();
+		printf("Dumped Localize\n");
 	}
 
 	void DumpLuaFile() {

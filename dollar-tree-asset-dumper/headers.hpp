@@ -6,6 +6,7 @@
 #include <filesystem>
 #include "structs.hpp"
 #include "functions.hpp"
+#include <unordered_map>
 
 extern uintptr_t base;
 
