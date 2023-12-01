@@ -2,7 +2,7 @@
 
 uintptr_t base = 0;
 
-int main(HMODULE handle) {
+int main() {
     AllocConsole();
     FILE* Dummy;
     freopen_s(&Dummy, "CONOUT$", "w", stdout);
@@ -17,7 +17,6 @@ int main(HMODULE handle) {
     if (Offsets::DB_GetString) XAssetDumper::DumpLocalize();
     //if (Offsets::DB_ReadRawFile) XAssetDumper::DumpRawFile();
     //XAssetDumper::DumpLuaFile();
-    FreeLibraryAndExitThread(handle, 0);
     return 0;
 }
 
@@ -29,7 +28,7 @@ BOOL APIENTRY DllMain( HMODULE hModule,
     switch (ul_reason_for_call)
     {
     case DLL_PROCESS_ATTACH:
-        main(hModule);
+        main();
     case DLL_THREAD_ATTACH:
     case DLL_THREAD_DETACH:
     case DLL_PROCESS_DETACH:
